@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tot Quadra</title>
+<style>
+  :root {
+    --bg: #f5f4f0; --panel: #ffffff; --text: #1c1c1a; --muted: #6b6a64; --line: #e2e0d8;
+    --accent: #c8102e; --accent-ink: #fff; --ok: #1f7a4a; --warn: #a65d00; --err: #b3261e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151514; --panel: #1f1f1d; --text: #ecebe6; --muted: #9c9a92; --line: #33322f;
+      --accent: #e8394f; --ok: #4cc38a; --warn: #f0a84a; --err: #ff6b60; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 20px; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 18px; font-size: 14px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+  label { font-size: 13px; color: var(--muted); }
+  select, input[type=text], input[type=url], input[type=number] {
+    width: 100%; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 10px; }
+  button { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 12px; cursor: pointer; }
+  button:hover { border-color: var(--muted); }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row > .grow { flex: 1; min-width: 0; }
+  .stack > * + * { margin-top: 8px; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 14px; margin-top: 10px; }
+  #results { list-style: none; padding: 0; margin: 8px 0 0; max-height: 240px; overflow: auto; }
+  #results li { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  #results li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #results small { color: var(--muted); }
+
+  .delay { text-align: center; }
+  .delay-value { display: flex; justify-content: center; align-items: baseline; gap: 6px; margin: 4px 0 12px; }
+  .delay-value input { width: 150px; text-align: center; font-size: 44px; font-weight: 700; padding: 2px 6px;
+    font-variant-numeric: tabular-nums; background: transparent; border-color: transparent; }
+  .delay-value input:focus { border-color: var(--line); outline: none; }
+  .delay-value span { font-size: 20px; color: var(--muted); }
+  .steps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .steps button { padding: 9px 0; font-variant-numeric: tabular-nums; }
+  .hint { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+  kbd { font: 12px ui-monospace, monospace; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; }
+
+  .sync { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .sync button { padding: 14px 8px; }
+  .sync button.armed { border-color: var(--accent); color: var(--accent); }
+
+  .status { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
+  .st-sonant .dot { background: var(--ok); }
+  .st-esperant .dot, .st-connectant .dot, .st-reconnectant .dot { background: var(--warn); }
+  .st-error .dot { background: var(--err); }
+  #statusDetail { color: var(--muted); font-size: 14px; margin: 4px 0 0; }
+  .st-error #statusDetail { color: var(--err); }
+  dl { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; margin: 12px 0 0; font-size: 14px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+  .vol { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .vol input { flex: 1; accent-color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tot Quadra</h1>
+  <p class="sub">Escolta la ràdio amb el retard exacte del vídeo que mires. El retard es manté encara que la ràdio es talli o reconnecti.</p>
+
+  <section class="stack">
+    <h2>Emissora</h2>
+    <select id="station" aria-label="Emissora"></select>
+    <div class="row">
+      <button id="play" class="primary grow">▶ Engega</button>
+      <button id="stop" disabled>■ Atura</button>
+    </div>
+    <details>
+      <summary>Cerca una altra emissora o afegeix-ne una URL</summary>
+      <div class="stack" style="margin-top:10px">
+        <div class="row">
+          <input id="q" class="grow" type="text" placeholder="Nom (p. ex. Ràdio Reus, COM Ràdio…)">
+          <button id="search">Cerca</button>
+        </div>
+        <ul id="results"></ul>
+        <div class="row">
+          <input id="customUrl" class="grow" type="url" placeholder="https://…/stream.mp3">
+          <button id="addCustom">Afegeix</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="delay">
+    <h2>Retard respecte al directe de la ràdio</h2>
+    <div class="delay-value">
+      <input id="delay" type="number" step="0.1" min="1" max="600" value="30" aria-label="Retard en segons">
+      <span>s</span>
+    </div>
+    <div class="steps">
+      <button data-step="-5">−5</button><button data-step="-1">−1</button><button data-step="-0.2">−0,2</button>
+      <button data-step="0.2">+0,2</button><button data-step="1">+1</button><button data-step="5">+5</button>
+    </div>
+    <p class="hint">Dreceres: <kbd>←</kbd> <kbd>→</kbd> ±0,2 s · <kbd>Maj</kbd>+<kbd>←</kbd> <kbd>→</kbd> ±1 s · <kbd>Re Pàg</kbd> / <kbd>Av Pàg</kbd> +5 / −5 s. Es desa per a cada emissora.</p>
+  </section>
+
+  <section>
+    <h2>Calibratge ràpid</h2>
+    <div class="sync">
+      <button id="markRadio">📻 Ho sento a la ràdio <kbd>R</kbd></button>
+      <button id="markVideo">📺 Ho veig al vídeo <kbd>V</kbd></button>
+    </div>
+    <p class="hint">Tria un moment clar (un xut, el xiulet, un gol). Prem un botó quan el sentis a la ràdio i l'altre quan el vegis al vídeo, en qualsevol ordre. El retard es corregeix amb la diferència.</p>
+  </section>
+
+  <section id="statusBox" class="st-aturat">
+    <div class="status"><span class="dot"></span><span id="statusText">Aturat</span></div>
+    <p id="statusDetail"></p>
+    <dl>
+      <dt>Retard real del que sona</dt><dd id="sHeard">—</dd>
+      <dt>Ràfega inicial del servidor</dt><dd id="sBurst">—</dd>
+      <dt>Àudio disponible enrere</dt><dd id="sHistory">—</dd>
+      <dt>Reconnexions</dt><dd id="sReconn">0</dd>
+      <dt>Format</dt><dd id="sCodec">—</dd>
+    </dl>
+    <div class="vol"><label for="vol">Volum</label><input id="vol" type="range" min="0" max="1" step="0.01" value="1"></div>
+  </section>
+</main>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
